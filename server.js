@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
@@ -20,7 +19,8 @@ app.post('/api/factorial', (req, res) => {
     try {
         const result =
             method === 'iterative' ? factorialIterative(number) : factorialRecursive(number);
-        history.push({ number, method, result });
+        const record = { id: Date.now(), number, method, result }; // Adding unique 'id' for each record
+        history.push(record);
         return res.json({ result });
     } catch (error) {
         console.error('Error calculating factorial:', error);
@@ -33,10 +33,17 @@ app.get('/api/history', (req, res) => {
     res.json(history);
 });
 
-// Route to clear history
+// Route to clear all history
 app.delete('/api/history', (req, res) => {
     history = [];
-    res.json({ message: 'Calculation history cleared successfully.' });
+    res.json({ message: 'All calculation history cleared successfully.' });
+});
+
+// Route to delete a specific history entry by ID
+app.delete('/api/history/:id', (req, res) => {
+    const { id } = req.params;
+    history = history.filter((record) => record.id !== parseInt(id));
+    res.json({ message: `History record with ID: ${id} deleted successfully.` });
 });
 
 // Iterative factorial function
