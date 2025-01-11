@@ -1,20 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Factorial = require('./models/Factorial');
-require('dotenv').config();
+const Factorial = require('./models/Factorial');  // Importing Factorial model
+require('dotenv').config(); // To load environment variables from .env file
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;  // Use the port from environment or default to 5000
 
-// Middleware
+// Middleware to parse JSON and handle CORS
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
-
-const mongoURI = process.env.MONGO_URI; // Get URI from environment variable
-
+// MongoDB Connection using Mongoose
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -23,50 +20,52 @@ mongoose.connect(process.env.MONGO_URI)
     console.error('Error connecting to MongoDB:', err);
   });
 
-
-// Factorial Logic
+// Factorial Calculation Logic
 function factorialIterative(n) {
-    let result = 1;
-    for (let i = 1; i <= n; i++) result *= i;
-    return result;
+  let result = 1;
+  for (let i = 1; i <= n; i++) result *= i;
+  return result;
 }
 
 function factorialRecursive(n) {
-    return n <= 1 ? 1 : n * factorialRecursive(n - 1);
+  return n <= 1 ? 1 : n * factorialRecursive(n - 1);
 }
 
-// API Routes
+// API Route for calculating factorial
 app.post('/api/factorial', async (req, res) => {
-    const { number, method } = req.body;
+  const { number, method } = req.body;
 
-    if (typeof number !== 'number' || number < 0 || !['iterative', 'recursive'].includes(method)) {
-        return res.status(400).json({ error: 'Invalid input. Enter a positive integer and valid method.' });
-    }
+  // Input validation
+  if (typeof number !== 'number' || number < 0 || !['iterative', 'recursive'].includes(method)) {
+    return res.status(400).json({ error: 'Invalid input. Enter a positive integer and valid method.' });
+  }
 
-    const result = method === 'iterative' ? factorialIterative(number) : factorialRecursive(number);
+  // Calculate the factorial based on the method selected (iterative or recursive)
+  const result = method === 'iterative' ? factorialIterative(number) : factorialRecursive(number);
 
-    // Save to database
-    try {
-        const record = new Factorial({ number, method, result });
-        await record.save();
-        res.json({ result });
-    } catch (error) {
-        console.error('Error saving to database:', error);
-        res.status(500).json({ error: 'Database error.' });
-    }
+  // Save the result to MongoDB
+  try {
+    const record = new Factorial({ number, method, result });
+    await record.save();
+    res.json({ result });
+  } catch (error) {
+    console.error('Error saving to database:', error);
+    res.status(500).json({ error: 'Database error.' });
+  }
 });
 
+// API Route for fetching the calculation history
 app.get('/api/history', async (req, res) => {
-    try {
-        const history = await Factorial.find().sort({ calculatedAt: -1 });
-        res.json(history);
-    } catch (error) {
-        console.error('Error fetching history:', error);
-        res.status(500).json({ error: 'Failed to fetch history.' });
-    }
+  try {
+    const history = await Factorial.find().sort({ calculatedAt: -1 });  // Sort history by most recent
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching history:', error);
+    res.status(500).json({ error: 'Failed to fetch history.' });
+  }
 });
 
+// Start the server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-  
+  console.log(`Server running on port ${PORT}`);
+});
