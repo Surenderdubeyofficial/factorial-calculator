@@ -1,18 +1,24 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Factorial = require('./models/Factorial');  // Importing Factorial model
+const Factorial = require('./models/Factorial'); // Importing Factorial model
 require('dotenv').config(); // To load environment variables from .env file
 
 const app = express();
-const PORT = process.env.PORT || 5000;  // Use the port from environment or default to 5000
+const PORT = process.env.PORT || 5000; // Use the port from environment or default to 5000
 
 // Middleware to parse JSON and handle CORS
 app.use(cors());
 app.use(express.json());
 
+// Root Route for Basic Confirmation
+app.get('/', (req, res) => {
+  res.send('Backend server is up and running!');
+});
+
 // MongoDB Connection using Mongoose
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('Connected to MongoDB');
   })
@@ -57,7 +63,7 @@ app.post('/api/factorial', async (req, res) => {
 // API Route for fetching the calculation history
 app.get('/api/history', async (req, res) => {
   try {
-    const history = await Factorial.find().sort({ calculatedAt: -1 });  // Sort history by most recent
+    const history = await Factorial.find().sort({ calculatedAt: -1 }); // Sort history by most recent
     res.json(history);
   } catch (error) {
     console.error('Error fetching history:', error);
